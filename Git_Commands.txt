@@ -1,0 +1,20 @@
+git init
+git remote -v
+git remote set-url
+git remote set-url origin 9 git remote -v
+git push origin master
+git branch
+git branch
+git init
+git add.
+git add .
+git commit -m "first commit"
+Omit --global
+git config --global user.name "Rudraa"
+git commit -m "first commit"
+git push origin master
+git branch
+git push -u origin master
+git remote -v
+git remote -v
+git push -u origin master
