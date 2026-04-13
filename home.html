@@ -1,0 +1,776 @@
+<!doctype html>
+<html lang="en" class="h-full">
+ <head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Study Tracker</title>
+  <script src="https://cdn.tailwindcss.com/3.4.17"></script>
+  <script src="https://cdn.jsdelivr.net/npm/lucide@0.263.0/dist/umd/lucide.min.js"></script>
+  <script src="/_sdk/element_sdk.js"></script>
+  <script src="/_sdk/data_sdk.js"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&amp;family=DM+Sans:wght@400;500;600;700&amp;display=swap" rel="stylesheet">
+  <style>
+  html, body { height: 100%; margin: 0; }
+  * { box-sizing: border-box; }
+  .font-display { font-family: 'Space Mono', monospace; }
+  .font-body { font-family: 'DM Sans', sans-serif; }
+  .glass { background: rgba(255,255,255,0.06); backdrop-filter: blur(16px); border: 1px solid rgba(255,255,255,0.08); }
+  .glass-strong { background: rgba(255,255,255,0.1); backdrop-filter: blur(20px); border: 1px solid rgba(255,255,255,0.12); }
+  .bar-animate { animation: barGrow 0.8s ease-out forwards; transform-origin: bottom; }
+  @keyframes barGrow { from { transform: scaleY(0); } to { transform: scaleY(1); } }
+  @keyframes fadeUp { from { opacity:0; transform: translateY(12px); } to { opacity:1; transform: translateY(0); } }
+  .fade-up { animation: fadeUp 0.5s ease-out forwards; }
+  .stagger-1 { animation-delay: 0.05s; opacity:0; }
+  .stagger-2 { animation-delay: 0.1s; opacity:0; }
+  .stagger-3 { animation-delay: 0.15s; opacity:0; }
+  .stagger-4 { animation-delay: 0.2s; opacity:0; }
+  .glow-dot { box-shadow: 0 0 12px currentColor, 0 0 4px currentColor; }
+  input:focus, textarea:focus, select:focus { outline: none; box-shadow: 0 0 0 2px rgba(124,58,237,0.5); }
+  .toast-show { animation: toastIn 0.3s ease-out; }
+  @keyframes toastIn { from { opacity:0; transform: translateY(20px); } to { opacity:1; transform: translateY(0); } }
+  ::-webkit-scrollbar { width: 6px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.15); border-radius: 3px; }
+  .rewrite-pulse { animation: pulse 1.5s ease-in-out infinite; }
+  @keyframes pulse { 0%,100% { opacity:0.6; } 50% { opacity:1; } }
+</style>
+  <style>body { box-sizing: border-box; }</style>
+ </head>
+ <body class="h-full font-body" style="background: #0a0a0f;">
+  <div id="app" class="h-full w-full overflow-auto" style="background: linear-gradient(145deg, #0a0a0f 0%, #12101f 30%, #0f0a1a 60%, #0a0a0f 100%);"><!-- Noise texture overlay -->
+   <div class="fixed inset-0 pointer-events-none opacity-[0.03]" style="background-image: url('data:image/svg+xml,<svg viewBox=\" 0 256 256\ xmlns="\&quot;http://www.w3.org/2000/svg\&quot;">
+    <filter id="\&quot;n\&quot;">
+     <feturbulence type="\&quot;fractalNoise\&quot;" basefrequency="\&quot;0.9\&quot;" numoctaves="\&quot;4\&quot;" stitchtiles="\&quot;stitch\&quot;/"></feturbulence>
+    </filter><rect width="\&quot;256\&quot;" height="\&quot;256\&quot;" filter="\&quot;url(%23n)\&quot;" opacity="\&quot;1\&quot;/">
+     '); background-size: 128px;"&gt;
+    </rect>
+   </div>
+   <div class="relative max-w-6xl mx-auto px-4 py-8 md:px-8"><!-- Header -->
+    <header class="mb-10 fade-up stagger-1">
+     <div class="flex items-center justify-between flex-wrap gap-4">
+      <div>
+       <h1 id="appTitle" class="font-display text-3xl md:text-4xl font-bold" style="color: #c4b5fd;">📚 Study Tracker</h1>
+       <p id="motivationText" class="mt-2 text-sm" style="color: #7c6f9b;">Keep pushing forward!</p>
+      </div><button id="addBtn" class="flex items-center gap-2 px-5 py-3 rounded-xl font-semibold text-sm transition-all hover:scale-105 active:scale-95" style="background: #7c3aed; color: #f0e8ff;"> <i data-lucide="plus" style="width:18px;height:18px;"></i> New Entry </button>
+     </div>
+    </header><!-- Stats Row -->
+    <section id="statsRow" class="grid grid-cols-2 md:grid-cols-4 gap-3 mb-8 fade-up stagger-2">
+     <div class="glass rounded-2xl p-4 text-center">
+      <div class="text-2xl font-display font-bold" style="color: #c4b5fd;" id="statTotal">
+       0
+      </div>
+      <div class="text-xs mt-1" style="color: #7c6f9b;">
+       Total Hours
+      </div>
+     </div>
+     <div class="glass rounded-2xl p-4 text-center">
+      <div class="text-2xl font-display font-bold" style="color: #34d399;" id="statSessions">
+       0
+      </div>
+      <div class="text-xs mt-1" style="color: #7c6f9b;">
+       Sessions
+      </div>
+     </div>
+     <div class="glass rounded-2xl p-4 text-center">
+      <div class="text-2xl font-display font-bold" style="color: #fbbf24;" id="statStreak">
+       0
+      </div>
+      <div class="text-xs mt-1" style="color: #7c6f9b;">
+       Day Streak
+      </div>
+     </div>
+     <div class="glass rounded-2xl p-4 text-center">
+      <div class="text-2xl font-display font-bold" style="color: #f472b6;" id="statAvg">
+       0
+      </div>
+      <div class="text-xs mt-1" style="color: #7c6f9b;">
+       Avg Min/Session
+      </div>
+     </div>
+    </section><!-- Charts Section -->
+    <section class="grid md:grid-cols-2 gap-4 mb-8 fade-up stagger-3"><!-- Weekly Bar Chart -->
+     <div class="glass rounded-2xl p-5">
+      <h2 class="font-display text-sm font-bold mb-4" style="color: #c4b5fd;">Last 7 Days</h2>
+      <div class="flex items-end justify-between gap-2" style="height: 140px;" id="weeklyChart"></div>
+     </div><!-- Subject Donut -->
+     <div class="glass rounded-2xl p-5">
+      <h2 class="font-display text-sm font-bold mb-4" style="color: #c4b5fd;">By Subject</h2>
+      <div class="flex items-center gap-4">
+       <div class="relative" style="width:120px;height:120px;">
+        <svg id="donutChart" viewbox="0 0 36 36" class="w-full h-full" style="transform:rotate(-90deg);"><circle cx="18" cy="18" r="14" fill="none" stroke="rgba(255,255,255,0.05)" stroke-width="4" />
+        </svg>
+        <div class="absolute inset-0 flex items-center justify-center"><span id="donutCenter" class="font-display text-xs font-bold" style="color:#c4b5fd;">—</span>
+        </div>
+       </div>
+       <div id="subjectLegend" class="flex flex-col gap-1.5 text-xs" style="color:#9ca3af;"></div>
+      </div>
+     </div>
+    </section><!-- Filter Section -->
+    <section class="mb-6 fade-up stagger-4">
+     <div class="glass rounded-2xl p-4">
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-3 items-end">
+       <div>
+        <label for="filterType" class="block text-xs font-semibold mb-1.5" style="color:#9ca3af;">Filter By</label> <select id="filterType" class="w-full px-4 py-2.5 rounded-xl text-sm" style="background:rgba(255,255,255,0.06); border:1px solid rgba(255,255,255,0.1); color:#e0dce8;"> <option value="">All Entries</option> <option value="subject">Subject</option> <option value="date">Date</option> </select>
+       </div>
+       <div>
+        <label for="filterValue" class="block text-xs font-semibold mb-1.5" style="color:#9ca3af;">Select</label> <select id="filterValue" class="w-full px-4 py-2.5 rounded-xl text-sm" style="background:rgba(255,255,255,0.06); border:1px solid rgba(255,255,255,0.1); color:#e0dce8; display:none;"> </select>
+       </div><button id="clearFilter" class="px-4 py-2.5 rounded-xl text-sm font-semibold transition hover:scale-105" style="background:rgba(239,68,68,0.15); color:#f87171; display:none;">Clear Filter</button>
+      </div>
+     </div>
+    </section><!-- Entries List -->
+    <section class="fade-up stagger-4">
+     <div class="flex items-center justify-between mb-4">
+      <h2 class="font-display text-sm font-bold" style="color: #c4b5fd;">Recent Sessions</h2><span id="entryCount" class="text-xs" style="color:#7c6f9b;">0 entries</span>
+     </div>
+     <div id="entriesList" class="space-y-3"></div>
+     <div id="emptyState" class="glass rounded-2xl p-10 text-center" style="color:#7c6f9b;">
+      <div class="text-4xl mb-3">
+       📖
+      </div>
+      <div class="font-semibold mb-1">
+       No study sessions yet
+      </div>
+      <div class="text-sm">
+       Click "New Entry" to log your first session!
+      </div>
+     </div>
+    </section>
+   </div>
+  </div><!-- Add/Edit Modal -->
+  <div id="modal" class="fixed inset-0 z-50 hidden items-center justify-center p-4" style="background:rgba(0,0,0,0.7); backdrop-filter:blur(4px);">
+   <div class="glass-strong rounded-3xl p-6 w-full max-w-md max-h-[90%] overflow-auto" style="background:rgba(18,16,31,0.95);">
+    <div class="flex items-center justify-between mb-6">
+     <h2 id="modalTitle" class="font-display text-lg font-bold" style="color:#c4b5fd;">New Study Session</h2><button id="modalClose" class="p-1 rounded-lg hover:bg-white/10 transition" style="color:#7c6f9b;"><i data-lucide="x" style="width:20px;height:20px;"></i></button>
+    </div>
+    <form id="entryForm" class="space-y-4">
+     <div><label for="fSubject" class="block text-xs font-semibold mb-1.5" style="color:#9ca3af;">Subject</label> <input id="fSubject" type="text" required class="w-full px-4 py-2.5 rounded-xl text-sm font-body" style="background:rgba(255,255,255,0.06); border:1px solid rgba(255,255,255,0.1); color:#e0dce8;" placeholder="e.g. Mathematics">
+     </div>
+     <div><label for="fEmoji" class="block text-xs font-semibold mb-1.5" style="color:#9ca3af;">Icon</label>
+      <div id="emojiPicker" class="flex flex-wrap gap-2"></div>
+     </div>
+     <div class="grid grid-cols-2 gap-3">
+      <div><label for="fDuration" class="block text-xs font-semibold mb-1.5" style="color:#9ca3af;">Duration (min)</label> <input id="fDuration" type="number" min="1" max="720" required class="w-full px-4 py-2.5 rounded-xl text-sm" style="background:rgba(255,255,255,0.06); border:1px solid rgba(255,255,255,0.1); color:#e0dce8;" placeholder="60">
+      </div>
+      <div><label for="fDate" class="block text-xs font-semibold mb-1.5" style="color:#9ca3af;">Date</label> <input id="fDate" type="date" required class="w-full px-4 py-2.5 rounded-xl text-sm" style="background:rgba(255,255,255,0.06); border:1px solid rgba(255,255,255,0.1); color:#e0dce8;">
+      </div>
+     </div>
+     <div><label for="fMood" class="block text-xs font-semibold mb-1.5" style="color:#9ca3af;">How did it feel?</label>
+      <div id="moodPicker" class="flex gap-2"></div>
+     </div>
+     <div>
+      <div class="flex items-center justify-between mb-1.5"><label for="fDesc" class="block text-xs font-semibold" style="color:#9ca3af;">Notes</label> <button type="button" id="rewriteBtn" class="flex items-center gap-1 text-xs px-2.5 py-1 rounded-lg transition hover:scale-105" style="background:rgba(124,58,237,0.2); color:#c4b5fd;"> <i data-lucide="sparkles" style="width:12px;height:12px;"></i> AI Rewrite </button>
+      </div><textarea id="fDesc" rows="3" class="w-full px-4 py-2.5 rounded-xl text-sm resize-none" style="background:rgba(255,255,255,0.06); border:1px solid rgba(255,255,255,0.1); color:#e0dce8;" placeholder="What did you study? Any notes..."></textarea>
+      <div id="rewriteStatus" class="text-xs mt-1 hidden" style="color:#a78bfa;"></div>
+     </div>
+     <div><label for="fImportant" class="block text-xs font-semibold mb-1.5" style="color:#9ca3af;">⭐ Important to Remember</label> <textarea id="fImportant" rows="2" class="w-full px-4 py-2.5 rounded-xl text-sm resize-none" style="background:rgba(255,255,255,0.06); border:1px solid rgba(255,255,255,0.1); color:#e0dce8;" placeholder="Key points, formulas, definitions..."></textarea>
+     </div>
+     <div><label for="fLink" class="block text-xs font-semibold mb-1.5" style="color:#9ca3af;">📎 Resource Link</label> <input id="fLink" type="url" class="w-full px-4 py-2.5 rounded-xl text-sm" style="background:rgba(255,255,255,0.06); border:1px solid rgba(255,255,255,0.1); color:#e0dce8;" placeholder="https://example.com (video, article, etc.)">
+     </div>
+     <div><label for="fImage" class="block text-xs font-semibold mb-1.5" style="color:#9ca3af;">🖼️ Screenshot / Image</label>
+      <div class="relative">
+       <input id="fImage" type="file" accept="image/*" class="hidden"> <button type="button" id="imageBtn" class="w-full px-4 py-2.5 rounded-xl text-sm transition hover:scale-[1.01]" style="background:rgba(255,255,255,0.06); border:1px dashed rgba(124,58,237,0.5); color:#9ca3af;"> <i data-lucide="upload" style="width:14px;height:14px; display:inline; margin-right:6px;"></i> Click to add image </button>
+       <div id="imagePreview" class="mt-2 hidden">
+        <img id="previewImg" class="w-full h-24 object-cover rounded-lg" style="background:rgba(0,0,0,0.2);"> <button type="button" id="imageClear" class="mt-1.5 text-xs px-2.5 py-1 rounded-lg transition hover:scale-105" style="background:rgba(239,68,68,0.15); color:#f87171;">Remove Image</button>
+       </div>
+      </div>
+     </div>
+     <div id="formError" class="text-xs hidden rounded-lg p-2 text-center" style="background:rgba(239,68,68,0.15); color:#f87171;"></div><button type="submit" id="submitBtn" class="w-full py-3 rounded-xl font-semibold text-sm transition-all hover:scale-[1.02] active:scale-[0.98] flex items-center justify-center gap-2" style="background:#7c3aed; color:#f0e8ff;"> Save Session </button>
+    </form>
+   </div>
+  </div><!-- Delete Confirm -->
+  <div id="deleteConfirm" class="fixed inset-0 z-50 hidden items-center justify-center p-4" style="background:rgba(0,0,0,0.7); backdrop-filter:blur(4px);">
+   <div class="glass-strong rounded-2xl p-6 w-full max-w-sm text-center" style="background:rgba(18,16,31,0.95);">
+    <div class="text-3xl mb-3">
+     🗑️
+    </div>
+    <h3 class="font-display font-bold mb-2" style="color:#c4b5fd;">Delete this session?</h3>
+    <p class="text-sm mb-5" style="color:#7c6f9b;">This action cannot be undone.</p>
+    <div class="flex gap-3"><button id="delCancel" class="flex-1 py-2.5 rounded-xl text-sm font-semibold transition hover:bg-white/10" style="background:rgba(255,255,255,0.06); color:#9ca3af;">Cancel</button> <button id="delConfirm" class="flex-1 py-2.5 rounded-xl text-sm font-semibold transition hover:scale-105" style="background:#ef4444; color:#fff;">Delete</button>
+    </div>
+   </div>
+  </div><!-- Toast -->
+  <div id="toast" class="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 hidden px-5 py-3 rounded-2xl text-sm font-semibold glass-strong" style="color:#c4b5fd;"></div>
+  <script>
+// ===== STATE =====
+let allData = [];
+let editingRecord = null;
+let deletingRecord = null;
+let selectedEmoji = '📘';
+let selectedMood = '😊';
+const emojis = ['📘','📕','📗','📒','🧮','💻','🔬','🎨','🎵','🌍','📐','🧪','🧠','✏️','📊'];
+const moods = [{e:'😊',l:'Great'},{e:'🙂',l:'Good'},{e:'😐',l:'Okay'},{e:'😓',l:'Hard'},{e:'🔥',l:'On Fire'}];
+const subjectColors = ['#7c3aed','#34d399','#fbbf24','#f472b6','#60a5fa','#f97316','#a78bfa','#2dd4bf'];
+
+// ===== DEFAULT CONFIG =====
+const defaultConfig = {
+  app_title: 'Study Tracker',
+  motivation_text: 'Keep pushing forward!',
+  background_color: '#0a0a0f',
+  surface_color: '#1a1730',
+  text_color: '#c4b5fd',
+  primary_action_color: '#7c3aed',
+  secondary_action_color: '#7c6f9b',
+  font_family: 'DM Sans',
+  font_size: 14
+};
+
+// ===== ELEMENT SDK =====
+window.elementSdk.init({
+  defaultConfig,
+  onConfigChange: async (config) => {
+    const c = { ...defaultConfig, ...config };
+    const font = c.font_family || defaultConfig.font_family;
+    const fs = c.font_size || defaultConfig.font_size;
+    document.getElementById('appTitle').textContent = '📚 ' + (c.app_title || defaultConfig.app_title);
+    document.getElementById('motivationText').textContent = c.motivation_text || defaultConfig.motivation_text;
+    document.getElementById('appTitle').style.color = c.text_color;
+    document.querySelectorAll('[style*="color: #c4b5fd"], [style*="color:#c4b5fd"]').forEach(el => el.style.color = c.text_color);
+    document.getElementById('addBtn').style.background = c.primary_action_color;
+    document.getElementById('submitBtn').style.background = c.primary_action_color;
+    document.querySelectorAll('.font-body, .font-display').forEach(el => {
+      el.style.fontFamily = `${font}, DM Sans, sans-serif`;
+    });
+    document.body.style.fontSize = fs + 'px';
+  },
+  mapToCapabilities: (config) => ({
+    recolorables: [
+      { get: () => config.background_color || defaultConfig.background_color, set: v => { config.background_color = v; window.elementSdk.setConfig({ background_color: v }); }},
+      { get: () => config.surface_color || defaultConfig.surface_color, set: v => { config.surface_color = v; window.elementSdk.setConfig({ surface_color: v }); }},
+      { get: () => config.text_color || defaultConfig.text_color, set: v => { config.text_color = v; window.elementSdk.setConfig({ text_color: v }); }},
+      { get: () => config.primary_action_color || defaultConfig.primary_action_color, set: v => { config.primary_action_color = v; window.elementSdk.setConfig({ primary_action_color: v }); }},
+      { get: () => config.secondary_action_color || defaultConfig.secondary_action_color, set: v => { config.secondary_action_color = v; window.elementSdk.setConfig({ secondary_action_color: v }); }}
+    ],
+    borderables: [],
+    fontEditable: { get: () => config.font_family || defaultConfig.font_family, set: v => { config.font_family = v; window.elementSdk.setConfig({ font_family: v }); }},
+    fontSizeable: { get: () => config.font_size || defaultConfig.font_size, set: v => { config.font_size = v; window.elementSdk.setConfig({ font_size: v }); }}
+  }),
+  mapToEditPanelValues: (config) => new Map([
+    ['app_title', config.app_title || defaultConfig.app_title],
+    ['motivation_text', config.motivation_text || defaultConfig.motivation_text]
+  ])
+});
+
+// ===== DATA SDK =====
+const dataHandler = {
+  onDataChanged(data) {
+    allData = data;
+    updateStats();
+    updateCharts();
+    renderEntries();
+  }
+};
+
+(async () => {
+  const r = await window.dataSdk.init(dataHandler);
+  if (!r.isOk) showToast('Failed to connect to data store');
+})();
+
+// ===== UI BUILDERS =====
+function buildEmojiPicker() {
+  const c = document.getElementById('emojiPicker');
+  c.innerHTML = '';
+  emojis.forEach(e => {
+    const b = document.createElement('button');
+    b.type = 'button';
+    b.textContent = e;
+    b.className = 'w-9 h-9 rounded-lg text-lg flex items-center justify-center transition hover:scale-110';
+    b.style.background = e === selectedEmoji ? 'rgba(124,58,237,0.3)' : 'rgba(255,255,255,0.06)';
+    b.style.border = e === selectedEmoji ? '2px solid #7c3aed' : '1px solid transparent';
+    b.addEventListener('click', () => { selectedEmoji = e; buildEmojiPicker(); });
+    c.appendChild(b);
+  });
+}
+
+function buildMoodPicker() {
+  const c = document.getElementById('moodPicker');
+  c.innerHTML = '';
+  moods.forEach(m => {
+    const b = document.createElement('button');
+    b.type = 'button';
+    b.className = 'flex flex-col items-center gap-0.5 px-3 py-2 rounded-xl transition hover:scale-105';
+    b.style.background = m.e === selectedMood ? 'rgba(124,58,237,0.3)' : 'rgba(255,255,255,0.06)';
+    b.style.border = m.e === selectedMood ? '2px solid #7c3aed' : '1px solid transparent';
+    b.innerHTML = `<span class="text-lg">${m.e}</span><span class="text-[10px]" style="color:#9ca3af;">${m.l}</span>`;
+    b.addEventListener('click', () => { selectedMood = m.e; buildMoodPicker(); });
+    c.appendChild(b);
+  });
+}
+
+// ===== STATS =====
+function updateStats() {
+  const totalMin = allData.reduce((s, d) => s + (d.duration || 0), 0);
+  document.getElementById('statTotal').textContent = (totalMin / 60).toFixed(1);
+  document.getElementById('statSessions').textContent = allData.length;
+  document.getElementById('statAvg').textContent = allData.length ? Math.round(totalMin / allData.length) : 0;
+
+  // Streak
+  const dates = [...new Set(allData.map(d => d.date))].sort().reverse();
+  let streak = 0;
+  const today = new Date(); today.setHours(0,0,0,0);
+  for (let i = 0; i < 365; i++) {
+    const check = new Date(today); check.setDate(check.getDate() - i);
+    const ds = check.toISOString().split('T')[0];
+    if (dates.includes(ds)) streak++; else if (i > 0) break;
+  }
+  document.getElementById('statStreak').textContent = streak;
+}
+
+// ===== CHARTS =====
+function updateCharts() {
+  // Weekly bar chart
+  const wc = document.getElementById('weeklyChart');
+  wc.innerHTML = '';
+  const today = new Date(); today.setHours(0,0,0,0);
+  const days = [];
+  for (let i = 6; i >= 0; i--) {
+    const d = new Date(today); d.setDate(d.getDate() - i);
+    const ds = d.toISOString().split('T')[0];
+    const mins = allData.filter(r => r.date === ds).reduce((s, r) => s + (r.duration || 0), 0);
+    days.push({ label: d.toLocaleDateString('en', { weekday: 'short' }), mins, ds });
+  }
+  const maxM = Math.max(...days.map(d => d.mins), 1);
+  days.forEach((d, i) => {
+    const col = document.createElement('div');
+    col.className = 'flex flex-col items-center gap-1 flex-1';
+    const pct = Math.max((d.mins / maxM) * 100, 4);
+    const isToday = i === 6;
+    col.innerHTML = `
+      <div class="text-[10px] font-semibold" style="color:${d.mins ? '#c4b5fd' : '#4a4560'};">${d.mins}m</div>
+      <div class="w-full rounded-t-lg bar-animate" style="height:${pct}%; background: ${isToday ? 'linear-gradient(to top, #7c3aed, #a78bfa)' : d.mins ? 'rgba(124,58,237,0.4)' : 'rgba(255,255,255,0.04)'}; animation-delay:${i * 0.08}s; min-height:4px;"></div>
+      <div class="text-[10px]" style="color:${isToday ? '#c4b5fd' : '#4a4560'};">${d.label}</div>
+    `;
+    wc.appendChild(col);
+  });
+
+  // Donut chart
+  const subjects = {};
+  allData.forEach(d => { subjects[d.subject] = (subjects[d.subject] || 0) + (d.duration || 0); });
+  const sorted = Object.entries(subjects).sort((a, b) => b[1] - a[1]);
+  const total = sorted.reduce((s, [, v]) => s + v, 0);
+  const svg = document.getElementById('donutChart');
+  svg.innerHTML = '<circle cx="18" cy="18" r="14" fill="none" stroke="rgba(255,255,255,0.05)" stroke-width="4"/>';
+  const circ = 2 * Math.PI * 14;
+  let offset = 0;
+  sorted.forEach(([, mins], i) => {
+    const pct = total ? mins / total : 0;
+    const seg = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+    seg.setAttribute('cx', '18'); seg.setAttribute('cy', '18'); seg.setAttribute('r', '14');
+    seg.setAttribute('fill', 'none'); seg.setAttribute('stroke', subjectColors[i % subjectColors.length]);
+    seg.setAttribute('stroke-width', '4');
+    seg.setAttribute('stroke-dasharray', `${pct * circ} ${circ}`);
+    seg.setAttribute('stroke-dashoffset', `${-offset * circ}`);
+    svg.appendChild(seg);
+    offset += pct;
+  });
+  document.getElementById('donutCenter').textContent = sorted.length ? sorted.length + ' subj' : '—';
+
+  // Legend
+  const leg = document.getElementById('subjectLegend');
+  leg.innerHTML = '';
+  sorted.slice(0, 5).forEach(([name, mins], i) => {
+    const d = document.createElement('div');
+    d.className = 'flex items-center gap-2';
+    d.innerHTML = `<span class="w-2.5 h-2.5 rounded-full inline-block glow-dot" style="color:${subjectColors[i % subjectColors.length]}; background:${subjectColors[i % subjectColors.length]};"></span><span>${name}</span><span style="color:#555;">${Math.round(mins)}m</span>`;
+    leg.appendChild(d);
+  });
+}
+
+// ===== ENTRIES =====
+function updateFilterOptions() {
+  const filterType = document.getElementById('filterType');
+  const filterValue = document.getElementById('filterValue');
+  const clearBtn = document.getElementById('clearFilter');
+  
+  filterType.addEventListener('change', () => {
+    if (filterType.value === 'subject') {
+      const subjects = new Set();
+      allData.forEach(d => {
+        if (d.subject) subjects.add(d.subject);
+      });
+      filterValue.innerHTML = '<option value="">All Subjects</option>' + 
+        Array.from(subjects).sort().map(s => `<option value="${s}">${s}</option>`).join('');
+      filterValue.style.display = 'block';
+      clearBtn.style.display = 'inline-block';
+      filterValue.value = '';
+    } else if (filterType.value === 'date') {
+      const dates = new Set();
+      allData.forEach(d => {
+        if (d.date) dates.add(d.date);
+      });
+      filterValue.innerHTML = '<option value="">All Dates</option>' + 
+        Array.from(dates).sort().reverse().map(d => `<option value="${d}">${new Date(d + 'T00:00:00').toLocaleDateString('en', { month: 'short', day: 'numeric', year: 'numeric' })}</option>`).join('');
+      filterValue.style.display = 'block';
+      clearBtn.style.display = 'inline-block';
+      filterValue.value = '';
+    } else {
+      filterValue.style.display = 'none';
+      clearBtn.style.display = 'none';
+      filterValue.value = '';
+      renderEntries();
+      updateStats();
+      updateCharts();
+    }
+  });
+  
+  filterValue.addEventListener('change', () => {
+    renderEntries();
+    updateStats();
+    updateCharts();
+  });
+  
+  clearBtn.addEventListener('click', () => {
+    filterType.value = '';
+    filterValue.value = '';
+    filterValue.style.display = 'none';
+    clearBtn.style.display = 'none';
+    renderEntries();
+    updateStats();
+    updateCharts();
+  });
+}
+
+function getFilteredData() {
+  const filterType = document.getElementById('filterType').value;
+  const filterValue = document.getElementById('filterValue').value;
+  
+  return allData.filter(d => {
+    if (filterType === 'subject' && filterValue && d.subject !== filterValue) return false;
+    if (filterType === 'date' && filterValue && d.date !== filterValue) return false;
+    return true;
+  });
+}
+
+function renderEntries() {
+  const list = document.getElementById('entriesList');
+  const empty = document.getElementById('emptyState');
+  const filtered = getFilteredData();
+  document.getElementById('entryCount').textContent = filtered.length + ' ' + (filtered.length === 1 ? 'entry' : 'entries');
+
+  if (!filtered.length) {
+    list.innerHTML = '';
+    empty.innerHTML = '<div class="text-4xl mb-3">📖</div><div class="font-semibold mb-1">No entries found</div><div class="text-sm">Try adjusting your filters or add a new session</div>';
+    empty.style.display = 'block';
+    return;
+  }
+  empty.style.display = 'none';
+  list.innerHTML = '';
+
+  const sorted = [...filtered].sort((a, b) => {
+    const dateA = new Date(b.date || '1970-01-01');
+    const dateB = new Date(a.date || '1970-01-01');
+    if (dateA.getTime() !== dateB.getTime()) return dateA - dateB;
+    const timeA = new Date(b.created_at || 0).getTime();
+    const timeB = new Date(a.created_at || 0).getTime();
+    return timeA - timeB;
+  });
+
+  sorted.forEach((record, idx) => {
+    const el = document.createElement('div');
+    el.dataset.id = record.__backendId;
+    el.className = 'fade-up';
+    el.style.animationDelay = (idx * 0.03) + 's';
+    el.style.opacity = '0';
+    el.dataset.expanded = 'false';
+    
+    const dateStr = record.date ? new Date(record.date + 'T00:00:00').toLocaleDateString('en', { month: 'short', day: 'numeric', year: 'numeric' }) : 'No date';
+    
+    el.innerHTML = `
+      <div class="glass rounded-2xl p-4 transition hover:bg-white/[0.03] cursor-pointer entry-toggle" style="border: 1px solid rgba(124,58,237,0.1);">
+        <div class="flex items-start gap-3">
+          <div class="text-2xl mt-0.5" style="flex-shrink:0;">${record.emoji || '📘'}</div>
+          <div class="flex-1 min-w-0">
+            <div class="flex items-center gap-2 flex-wrap">
+              <span class="font-semibold text-sm" style="color:#e0dce8;">${esc(record.subject || 'Untitled')}</span>
+            </div>
+            <div class="text-xs mt-1" style="color:#7c6f9b;">${dateStr}</div>
+            ${record.description ? `<p class="text-xs mt-2 leading-relaxed line-clamp-2" style="color:#9ca3af;">${esc(record.description)}</p>` : ''}
+          </div>
+          <div class="chevron-icon" style="color:#7c6f9b; flex-shrink:0; transition:transform 0.3s;"><i data-lucide="chevron-down" style="width:18px;height:18px;"></i></div>
+        </div>
+        
+        <div class="entry-details hidden mt-4 pt-4 border-t border-white/10 space-y-3">
+          <div class="grid grid-cols-2 gap-3">
+            <div>
+              <div class="text-xs" style="color:#7c6f9b;">Duration</div>
+              <div class="font-semibold text-sm mt-0.5" style="color:#e0dce8;">${record.duration || 0} min</div>
+            </div>
+            <div>
+              <div class="text-xs" style="color:#7c6f9b;">Mood</div>
+              <div class="text-lg mt-0.5">${record.mood || '😊'}</div>
+            </div>
+          </div>
+          ${record.important_note ? `<div class="text-xs p-2 rounded-lg" style="background:rgba(251,191,36,0.1); border-left:2px solid #fbbf24; color:#fcd34d;"><span style="font-weight:600;">⭐ Remember:</span> ${esc(record.important_note)}</div>` : ''}
+          ${record.resource_link ? `<a href="${esc(record.resource_link)}" target="_blank" rel="noopener noreferrer" class="text-xs inline-flex items-center gap-1 px-2.5 py-1 rounded-lg transition hover:bg-white/10" style="background:rgba(96,165,250,0.1); color:#60a5fa;">📎 View Resource</a>` : ''}
+          ${record.image_data ? `<img src="${record.image_data}" alt="Study session" class="w-full h-32 object-cover rounded-lg" style="background:rgba(0,0,0,0.2);">` : ''}
+          <div class="flex gap-2 pt-2">
+            <button class="entry-edit flex-1 py-2 rounded-lg text-xs font-semibold transition hover:bg-white/10" style="background:rgba(255,255,255,0.06); color:#9ca3af;">✏️ Edit</button>
+            <button class="entry-del flex-1 py-2 rounded-lg text-xs font-semibold transition hover:bg-red-500/20" style="background:rgba(239,68,68,0.1); color:#f87171;">🗑️ Delete</button>
+          </div>
+        </div>
+      </div>
+    `;
+    
+    const toggle = el.querySelector('.entry-toggle');
+    const details = el.querySelector('.entry-details');
+    const chevron = el.querySelector('.chevron-icon');
+    
+    toggle.onclick = (e) => {
+      if (e.target.closest('.entry-edit') || e.target.closest('.entry-del')) return;
+      const isHidden = details.classList.contains('hidden');
+      details.classList.toggle('hidden', !isHidden);
+      chevron.style.transform = isHidden ? 'rotate(180deg)' : 'rotate(0deg)';
+      toggle.style.borderColor = isHidden ? 'rgba(124,58,237,0.3)' : 'rgba(124,58,237,0.1)';
+    };
+    
+    el.querySelector('.entry-edit').onclick = () => openEdit(record);
+    el.querySelector('.entry-del').onclick = () => openDelete(record);
+    list.appendChild(el);
+  });
+  lucide.createIcons();
+}
+
+function esc(s) { const d = document.createElement('div'); d.textContent = s || ''; return d.innerHTML; }
+
+// ===== MODAL =====
+function openModal(title = 'New Study Session') {
+  document.getElementById('modalTitle').textContent = title;
+  document.getElementById('modal').classList.remove('hidden');
+  document.getElementById('modal').classList.add('flex');
+  document.getElementById('formError').classList.add('hidden');
+}
+function closeModal() {
+  document.getElementById('modal').classList.add('hidden');
+  document.getElementById('modal').classList.remove('flex');
+  editingRecord = null;
+  document.getElementById('entryForm').reset();
+  selectedEmoji = '📘'; selectedMood = '😊';
+  document.getElementById('imagePreview').classList.add('hidden');
+  buildEmojiPicker(); buildMoodPicker();
+}
+
+document.getElementById('imageBtn').addEventListener('click', () => {
+  document.getElementById('fImage').click();
+});
+document.getElementById('fImage').addEventListener('change', (e) => {
+  const file = e.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = (evt) => {
+    document.getElementById('previewImg').src = evt.target.result;
+    document.getElementById('imagePreview').classList.remove('hidden');
+  };
+  reader.readAsDataURL(file);
+});
+document.getElementById('imageClear').addEventListener('click', () => {
+  document.getElementById('fImage').value = '';
+  document.getElementById('imagePreview').classList.add('hidden');
+});
+
+document.getElementById('addBtn').addEventListener('click', () => {
+  editingRecord = null;
+  document.getElementById('fDate').value = new Date().toISOString().split('T')[0];
+  selectedEmoji = '📘'; selectedMood = '😊';
+  buildEmojiPicker(); buildMoodPicker();
+  openModal('New Study Session');
+});
+document.getElementById('modalClose').addEventListener('click', closeModal);
+document.getElementById('modal').addEventListener('click', e => { if (e.target === document.getElementById('modal')) closeModal(); });
+
+function openEdit(record) {
+  editingRecord = record;
+  document.getElementById('fSubject').value = record.subject || '';
+  document.getElementById('fDuration').value = record.duration || '';
+  document.getElementById('fDate').value = record.date || '';
+  document.getElementById('fDesc').value = record.description || '';
+  document.getElementById('fImportant').value = record.important_note || '';
+  document.getElementById('fLink').value = record.resource_link || '';
+  if (record.image_data) {
+    document.getElementById('previewImg').src = record.image_data;
+    document.getElementById('imagePreview').classList.remove('hidden');
+  }
+  selectedEmoji = record.emoji || '📘';
+  selectedMood = record.mood || '😊';
+  buildEmojiPicker(); buildMoodPicker();
+  openModal('Edit Session');
+}
+
+// ===== FORM SUBMIT =====
+document.getElementById('entryForm').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const btn = document.getElementById('submitBtn');
+  const errEl = document.getElementById('formError');
+  btn.disabled = true; btn.textContent = 'Saving...';
+  errEl.classList.add('hidden');
+
+  let imgData = '';
+  const imgFile = document.getElementById('fImage').files[0];
+  if (imgFile) {
+    try {
+      imgData = await new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => resolve(reader.result);
+        reader.onerror = () => reject(new Error('Failed to read file'));
+        reader.readAsDataURL(imgFile);
+      });
+    } catch (err) {
+      console.error('Image error:', err);
+      imgData = '';
+    }
+  } else if (editingRecord && editingRecord.image_data) {
+    imgData = editingRecord.image_data;
+  }
+
+  const data = {
+    subject: document.getElementById('fSubject').value.trim(),
+    description: document.getElementById('fDesc').value.trim(),
+    duration: parseInt(document.getElementById('fDuration').value) || 0,
+    date: document.getElementById('fDate').value,
+    emoji: selectedEmoji,
+    mood: selectedMood,
+    important_note: document.getElementById('fImportant').value.trim(),
+    resource_link: document.getElementById('fLink').value.trim(),
+    image_data: imgData || '',
+    created_at: editingRecord ? editingRecord.created_at : new Date().toISOString()
+  };
+
+  let result;
+  if (editingRecord) {
+    result = await window.dataSdk.update({ ...editingRecord, ...data });
+  } else {
+    if (allData.length >= 999) {
+      errEl.textContent = 'Limit reached (999 entries). Delete some first.';
+      errEl.classList.remove('hidden');
+      btn.disabled = false; btn.textContent = 'Save Session';
+      return;
+    }
+    result = await window.dataSdk.create(data);
+  }
+
+  if (result.isOk) {
+    showToast(editingRecord ? 'Session updated!' : 'Session saved!');
+    closeModal();
+  } else {
+    console.error('Save error:', result.error);
+    errEl.textContent = 'Failed to save. Please try again.';
+    errEl.classList.remove('hidden');
+  }
+  btn.disabled = false; btn.textContent = 'Save Session';
+});
+
+// ===== DELETE =====
+function openDelete(record) {
+  deletingRecord = record;
+  document.getElementById('deleteConfirm').classList.remove('hidden');
+  document.getElementById('deleteConfirm').classList.add('flex');
+}
+document.getElementById('delCancel').addEventListener('click', () => {
+  document.getElementById('deleteConfirm').classList.add('hidden');
+  document.getElementById('deleteConfirm').classList.remove('flex');
+  deletingRecord = null;
+});
+document.getElementById('delConfirm').addEventListener('click', async () => {
+  if (!deletingRecord) return;
+  const btn = document.getElementById('delConfirm');
+  btn.disabled = true; btn.textContent = 'Deleting...';
+  const r = await window.dataSdk.delete(deletingRecord);
+  if (r.isOk) showToast('Session deleted');
+  else showToast('Failed to delete');
+  btn.disabled = false; btn.textContent = 'Delete';
+  document.getElementById('deleteConfirm').classList.add('hidden');
+  document.getElementById('deleteConfirm').classList.remove('flex');
+  deletingRecord = null;
+});
+
+// ===== AI REWRITE =====
+document.getElementById('rewriteBtn').addEventListener('click', () => {
+  const ta = document.getElementById('fDesc');
+  const status = document.getElementById('rewriteStatus');
+  const text = ta.value.trim();
+  if (!text) { status.textContent = 'Write something first!'; status.classList.remove('hidden'); setTimeout(() => status.classList.add('hidden'), 2000); return; }
+
+  status.innerHTML = '<span class="rewrite-pulse">✨ Rewriting...</span>';
+  status.classList.remove('hidden');
+
+  setTimeout(() => {
+    ta.value = smartRewrite(text);
+    status.textContent = '✅ Rewritten!';
+    setTimeout(() => status.classList.add('hidden'), 2000);
+  }, 800);
+});
+
+function smartRewrite(text) {
+  // Common misspelling corrections
+  const fixes = {
+    'teh':'the','recieve':'receive','occured':'occurred','definately':'definitely','seperate':'separate',
+    'untill':'until','wierd':'weird','acheive':'achieve','accomodate':'accommodate','occurence':'occurrence',
+    'neccessary':'necessary','succesful':'successful','enviroment':'environment','goverment':'government',
+    'begining':'beginning','beleive':'believe','calender':'calendar','carribean':'caribbean',
+    'comittee':'committee','concious':'conscious','curiousity':'curiosity','dissapear':'disappear',
+    'embarass':'embarrass','existance':'existence','foriegn':'foreign','freind':'friend','gaurd':'guard',
+    'happend':'happened','immediatly':'immediately','independant':'independent','knowlege':'knowledge',
+    'liason':'liaison','manouvre':'manoeuvre','millenium':'millennium','noticable':'noticeable',
+    'occassion':'occasion','parliment':'parliament','persistant':'persistent','posession':'possession',
+    'prefered':'preferred','publically':'publicly','recomend':'recommend','refered':'referred',
+    'relevent':'relevant','remeber':'remember','resistence':'resistance','seize':'seize',
+    'similiar':'similar','suprise':'surprise','tommorow':'tomorrow','tounge':'tongue','truely':'truly',
+    'tyrany':'tyranny','unforgetable':'unforgettable','usefull':'useful','vaccum':'vacuum',
+    'wether':'whether','writting':'writing','youre':'you\'re','dont':'don\'t','cant':'can\'t',
+    'wont':'won\'t','didnt':'didn\'t','isnt':'isn\'t','wasnt':'wasn\'t','havent':'haven\'t',
+    'shouldnt':'shouldn\'t','wouldnt':'wouldn\'t','couldnt':'couldn\'t','thier':'their','alot':'a lot',
+    'becuase':'because','becasue':'because','beacuse':'because','basicly':'basically','diffrent':'different',
+    'intresting':'interesting','importent':'important','langauge':'language','mathmatics':'mathematics',
+    'physcis':'physics','chemisty':'chemistry','biologi':'biology','histroy':'history','geograpy':'geography',
+    'literture':'literature','grammer':'grammar','vocablary':'vocabulary','exersice':'exercise',
+    'practise':'practice','homwork':'homework','assigment':'assignment','complted':'completed',
+    'finised':'finished','reveiw':'review','studing':'studying','lerning':'learning','undrstood':'understood',
+    'confusin':'confusing','dificult':'difficult','chalenge':'challenge','progres':'progress',
+    'improvment':'improvement','excelent':'excellent'
+  };
+
+  let result = text;
+
+  // Fix misspellings
+  Object.entries(fixes).forEach(([wrong, right]) => {
+    const regex = new RegExp('\\b' + wrong + '\\b', 'gi');
+    result = result.replace(regex, (match) => {
+      return match[0] === match[0].toUpperCase() ? right.charAt(0).toUpperCase() + right.slice(1) : right;
+    });
+  });
+
+  // Capitalize first letter of sentences
+  result = result.replace(/(^|[.!?]\s+)([a-z])/g, (m, p, c) => p + c.toUpperCase());
+  if (result.length && result[0] !== result[0].toUpperCase()) result = result[0].toUpperCase() + result.slice(1);
+
+  // Ensure sentence ends with punctuation
+  result = result.trim();
+  if (result && !/[.!?]$/.test(result)) result += '.';
+
+  // Fix double spaces
+  result = result.replace(/\s{2,}/g, ' ');
+
+  // Fix missing space after punctuation
+  result = result.replace(/([.!?,])([A-Za-z])/g, '$1 $2');
+
+  // Capitalize "I" when standalone
+  result = result.replace(/\bi\b/g, 'I');
+
+  return result;
+}
+
+// ===== TOAST =====
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.remove('hidden');
+  t.classList.add('toast-show');
+  setTimeout(() => { t.classList.add('hidden'); t.classList.remove('toast-show'); }, 2500);
+}
+
+// ===== INIT =====
+buildEmojiPicker();
+buildMoodPicker();
+lucide.createIcons();
+updateFilterOptions();
+</script>
+ <script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'9eb8faa191149aa5',t:'MTc3NjA2NzY2Ny4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
+</html>
